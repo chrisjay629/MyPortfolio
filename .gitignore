@@ -1,0 +1,6 @@
+# Compass internal team memory — never publish
+COMPASS.md
+
+# local/dev noise
+.DS_Store
+*.log

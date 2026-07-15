@@ -1,0 +1,2860 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>INKWYRM — A Storytelling Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,500&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Caveat:wght@400;600;700&family=Special+Elite&family=UnifrakturCook:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment: #f0e3c8;
+    --parchment-dark: #d8c79f;
+    --parchment-deep: #b89c69;
+    --ink: #1a1208;
+    --ink-2: #2a1f10;
+    --ink-faded: #4a3820;
+    --candle: #d4942a;
+    --candle-glow: #f4b860;
+    --oxblood: #6b1a18;
+    --oxblood-deep: #3a0a0a;
+    --forest: #1f3a2a;
+    --forest-deep: #0e2018;
+    --sage: #6b7f5e;
+    --bone: #ede4cd;
+    --shadow: rgba(26, 18, 8, 0.85);
+    --rule: rgba(26, 18, 8, 0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 400;
+    overflow-x: hidden;
+    line-height: 1.55;
+    font-size: 18px;
+  }
+
+  /* Paper grain — applied to body, but each section can override */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.18;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+
+  /* Vignette over everything */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 998;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(26, 18, 8, 0.35) 100%);
+  }
+
+  section {
+    min-height: 100vh;
+    padding: 90px 70px;
+    position: relative;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  /* Common: torn paper edges, wax seals, ink-blot accents */
+  .ink-blot {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0.5;
+    filter: blur(0.5px);
+  }
+
+  .corner-flourish {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .corner-flourish.tl { top: 32px; left: 32px; }
+  .corner-flourish.tr { top: 32px; right: 32px; transform: scaleX(-1); }
+  .corner-flourish.bl { bottom: 32px; left: 32px; transform: scaleY(-1); }
+  .corner-flourish.br { bottom: 32px; right: 32px; transform: scale(-1); }
+
+  /* ==================================================================
+     SLIDE 1 — HERO :: Old Library / Grimoire
+     ================================================================== */
+  .hero {
+    background:
+      radial-gradient(ellipse at 50% 30%, rgba(244, 184, 96, 0.12) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 90%, rgba(107, 26, 24, 0.18) 0%, transparent 50%),
+      linear-gradient(180deg, #1a1208 0%, #2a1f10 50%, #1a1208 100%);
+    color: var(--bone);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 800' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+    opacity: 0.25;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+  }
+
+  /* candle glow blob */
+  .hero::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    right: 10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(244, 184, 96, 0.18) 0%, transparent 60%);
+    pointer-events: none;
+    animation: candle-flicker 4s ease-in-out infinite;
+  }
+
+  @keyframes candle-flicker {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.85; transform: scale(1.04); }
+  }
+
+  .hero-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 3;
+    position: relative;
+  }
+
+  .brand {
+    font-family: 'UnifrakturCook', serif;
+    font-size: 32px;
+    color: var(--candle-glow);
+    letter-spacing: 0.04em;
+    text-shadow: 0 0 20px rgba(244, 184, 96, 0.4);
+  }
+
+  .brand-tagline {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--parchment-dark);
+    margin-top: 6px;
+    opacity: 0.7;
+  }
+
+  .deck-meta {
+    text-align: right;
+    font-family: 'Special Elite', serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--candle-glow);
+    line-height: 1.7;
+  }
+
+  .deck-meta-divider {
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--candle-glow);
+    margin: 0 6px 3px;
+    vertical-align: middle;
+  }
+
+  .hero-center {
+    z-index: 3;
+    position: relative;
+    margin: auto 0;
+    max-width: 1400px;
+  }
+
+  .hero-flourish {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--candle-glow);
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    opacity: 0.9;
+  }
+
+  .hero-flourish::before, .hero-flourish::after {
+    content: '';
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--candle-glow), transparent);
+    flex: 0 0 80px;
+  }
+
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+    font-size: clamp(64px, 9vw, 156px);
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    color: var(--bone);
+    max-width: 1300px;
+  }
+
+  .hero h1 em {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--candle-glow);
+    text-shadow: 0 0 30px rgba(244, 184, 96, 0.4);
+  }
+
+  .hero h1 .ornate {
+    font-family: 'UnifrakturCook', serif;
+    font-weight: 700;
+    font-style: normal;
+    color: var(--candle);
+    font-size: 0.85em;
+    text-shadow: 0 0 25px rgba(212, 148, 42, 0.5);
+  }
+
+  .hero-bottom {
+    z-index: 3;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 40px;
+  }
+
+  .hero-tag {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 22px;
+    max-width: 600px;
+    line-height: 1.5;
+    color: var(--parchment-dark);
+  }
+
+  .hero-tag .drop {
+    font-family: 'UnifrakturCook', serif;
+    font-style: normal;
+    font-size: 56px;
+    float: left;
+    line-height: 0.9;
+    margin-right: 10px;
+    color: var(--candle-glow);
+    text-shadow: 0 0 20px rgba(244, 184, 96, 0.4);
+  }
+
+  .scroll-indicator {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 11px;
+    letter-spacing: 0.4em;
+    color: var(--candle-glow);
+    writing-mode: vertical-rl;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    opacity: 0.7;
+  }
+
+  .scroll-indicator::after {
+    content: '';
+    width: 1px;
+    height: 80px;
+    background: linear-gradient(180deg, var(--candle-glow), transparent);
+  }
+
+  /* Quill + ink blot decorations */
+  .quill-svg {
+    position: absolute;
+    z-index: 2;
+  }
+
+  /* ==================================================================
+     SHARED — slide numbers, eyebrows, titles
+     ================================================================== */
+  .slide-num {
+    position: absolute;
+    top: 36px;
+    right: 70px;
+    font-family: 'Special Elite', serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--ink-faded);
+    text-transform: uppercase;
+    z-index: 5;
+  }
+
+  .slide-num span {
+    color: var(--oxblood);
+    font-weight: 700;
+  }
+
+  .section-eyebrow {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 12px;
+    letter-spacing: 0.45em;
+    color: var(--oxblood);
+    margin-bottom: 26px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .section-eyebrow::before {
+    content: '';
+    width: 32px;
+    height: 1px;
+    background: var(--oxblood);
+  }
+
+  .section-eyebrow.light {
+    color: var(--candle-glow);
+  }
+
+  .section-eyebrow.light::before {
+    background: var(--candle-glow);
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(48px, 5.6vw, 92px);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-weight: 500;
+    margin-bottom: 36px;
+    color: var(--ink);
+  }
+
+  .section-title em {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--oxblood);
+  }
+
+  .section-title .ornate {
+    font-family: 'UnifrakturCook', serif;
+    font-style: normal;
+    font-weight: 700;
+    color: var(--forest);
+    font-size: 0.85em;
+  }
+
+  .section-title.light { color: var(--bone); }
+  .section-title.light em { color: var(--candle-glow); }
+
+  /* ==================================================================
+     SLIDE 2 — PROBLEM :: Detective's Noir Office
+     ================================================================== */
+  .problem {
+    background:
+      radial-gradient(ellipse at 25% 50%, rgba(107, 26, 24, 0.06) 0%, transparent 50%),
+      linear-gradient(180deg, #d8c79f 0%, #c4b186 100%);
+  }
+
+  .problem::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 600 600' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.1, 0 0 0 0 0.07, 0 0 0 0 0.04, 0 0 0 0.6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)' opacity='0.4'/%3E%3C/svg%3E");
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    opacity: 0.5;
+  }
+
+  .problem-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .problem-left {
+    position: relative;
+  }
+
+  .case-stamp {
+    display: inline-block;
+    transform: rotate(-4deg);
+    border: 3px double var(--oxblood);
+    color: var(--oxblood);
+    font-family: 'Special Elite', serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    padding: 8px 16px;
+    margin-bottom: 28px;
+    opacity: 0.8;
+  }
+
+  .problem-left p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 21px;
+    line-height: 1.65;
+    max-width: 540px;
+    color: var(--ink-2);
+  }
+
+  .problem-left p em {
+    font-family: 'IM Fell English', serif;
+    color: var(--oxblood);
+  }
+
+  /* Evidence cards / case files */
+  .evidence-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .evidence-card {
+    background: linear-gradient(180deg, #ede4cd 0%, #d8c79f 100%);
+    border: 1px solid rgba(26, 18, 8, 0.2);
+    padding: 28px 26px;
+    box-shadow:
+      0 2px 0 rgba(26, 18, 8, 0.08),
+      0 12px 24px rgba(26, 18, 8, 0.18),
+      inset 0 0 30px rgba(184, 156, 105, 0.2);
+    position: relative;
+    transform: rotate(-1deg);
+    min-height: 220px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .evidence-card:nth-child(2) { transform: rotate(1.2deg); }
+  .evidence-card:nth-child(3) { transform: rotate(0.8deg); }
+  .evidence-card:nth-child(4) { transform: rotate(-1.5deg); }
+
+  .evidence-card::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    right: 24px;
+    width: 36px;
+    height: 14px;
+    background: rgba(212, 148, 42, 0.35);
+    border: 1px solid rgba(107, 26, 24, 0.3);
+    transform: rotate(-3deg);
+  }
+
+  .evidence-label {
+    font-family: 'Special Elite', serif;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--oxblood);
+    margin-bottom: 8px;
+  }
+
+  .evidence-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 64px;
+    font-weight: 600;
+    line-height: 0.95;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+  }
+
+  .evidence-num em {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--oxblood);
+  }
+
+  .evidence-num .red { color: var(--oxblood); }
+
+  .evidence-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    margin-top: 14px;
+    font-style: italic;
+  }
+
+  /* ==================================================================
+     SLIDE 3 — SOLUTION :: Mythic Map Room
+     ================================================================== */
+  .solution {
+    background:
+      radial-gradient(ellipse at 70% 40%, rgba(244, 184, 96, 0.08) 0%, transparent 55%),
+      linear-gradient(180deg, #f0e3c8 0%, #e6d5af 100%);
+  }
+
+  .solution::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 25%, rgba(31, 58, 42, 0.04) 1px, transparent 1px),
+      radial-gradient(circle at 85% 75%, rgba(31, 58, 42, 0.04) 1px, transparent 1px),
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 50 100 Q 100 80 150 110 T 250 100' stroke='%231f3a2a' stroke-width='0.5' fill='none' opacity='0.15'/%3E%3Cpath d='M 30 200 Q 100 180 170 210 T 280 200' stroke='%231f3a2a' stroke-width='0.5' fill='none' opacity='0.15'/%3E%3C/svg%3E");
+    background-size: 50px 50px, 50px 50px, 600px 600px;
+    pointer-events: none;
+  }
+
+  .solution-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 70px;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .solution-left p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    line-height: 1.7;
+    color: var(--ink-2);
+    max-width: 580px;
+    margin-bottom: 40px;
+  }
+
+  .solution-left p em {
+    font-family: 'IM Fell English', serif;
+    color: var(--forest);
+  }
+
+  /* Compass-style pillars */
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    max-width: 680px;
+  }
+
+  .pillar {
+    background: rgba(237, 228, 205, 0.7);
+    border: 1px solid rgba(31, 58, 42, 0.3);
+    padding: 26px 22px;
+    position: relative;
+    backdrop-filter: blur(2px);
+  }
+
+  .pillar::before {
+    content: '✦';
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    color: var(--forest);
+    font-size: 14px;
+    opacity: 0.5;
+  }
+
+  .pillar-num {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    color: var(--oxblood);
+    letter-spacing: 0.3em;
+    margin-bottom: 16px;
+  }
+
+  .pillar-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.05;
+    margin-bottom: 8px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .pillar-desc {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    color: var(--ink-faded);
+    line-height: 1.5;
+    font-style: italic;
+  }
+
+  /* Phones — open book style */
+  .phone-stack {
+    position: relative;
+    height: 720px;
+  }
+
+  .phone {
+    position: absolute;
+    width: 320px;
+    height: 660px;
+    background: #1a1208;
+    border-radius: 44px;
+    padding: 14px;
+    box-shadow:
+      0 0 0 1px rgba(212, 148, 42, 0.4),
+      0 30px 60px rgba(26, 18, 8, 0.5),
+      0 60px 100px rgba(26, 18, 8, 0.35);
+  }
+
+  .phone::before {
+    content: '';
+    position: absolute;
+    top: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 26px;
+    background: #000;
+    border-radius: 14px;
+    z-index: 10;
+  }
+
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    background: #f0e3c8;
+    border-radius: 32px;
+    overflow: hidden;
+    position: relative;
+    color: var(--ink);
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  .phone-1 {
+    top: 0;
+    left: 50%;
+    transform: translateX(-90%) rotate(-5deg);
+    z-index: 1;
+  }
+
+  .phone-2 {
+    top: 30px;
+    left: 50%;
+    transform: translateX(-10%) rotate(7deg);
+    z-index: 2;
+  }
+
+  .p1-content {
+    padding: 70px 22px 22px;
+    height: 100%;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(244, 184, 96, 0.18), transparent 60%),
+      linear-gradient(180deg, #f0e3c8 0%, #e6d5af 100%);
+  }
+
+  .p1-step {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--oxblood);
+    margin-bottom: 14px;
+  }
+
+  .p1-q {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    line-height: 1.05;
+    font-weight: 500;
+    margin-bottom: 22px;
+    color: var(--ink);
+    letter-spacing: -0.01em;
+  }
+
+  .p1-q em {
+    font-family: 'IM Fell English', serif;
+    color: var(--oxblood);
+  }
+
+  .tag-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .tag {
+    padding: 6px 12px;
+    border: 1px solid var(--ink-faded);
+    border-radius: 100px;
+    font-size: 11px;
+    font-family: 'IM Fell English', serif;
+    color: var(--ink-faded);
+    background: transparent;
+  }
+
+  .tag.active {
+    background: var(--ink);
+    color: var(--candle-glow);
+    border-color: var(--ink);
+  }
+
+  .input-search {
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--ink-faded);
+    border-radius: 2px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--ink-faded);
+    margin-bottom: 14px;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+  }
+
+  .book-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 0;
+    border-bottom: 1px dotted rgba(26, 18, 8, 0.25);
+  }
+
+  .book-cover {
+    width: 36px;
+    height: 50px;
+    flex-shrink: 0;
+    box-shadow: 1px 1px 4px rgba(26, 18, 8, 0.3);
+  }
+
+  .book-cover.b1 { background: linear-gradient(135deg, #6b1a18, #2a0a0a); }
+  .book-cover.b2 { background: linear-gradient(135deg, #1f3a2a, #0e2018); }
+  .book-cover.b3 { background: linear-gradient(135deg, #d4942a, #6b3818); }
+
+  .book-info { flex: 1; min-width: 0; }
+  .book-title { font-size: 13px; font-weight: 600; color: var(--ink); line-height: 1.2; }
+  .book-author { font-size: 10px; color: var(--oxblood); font-family: 'IM Fell English SC', serif; letter-spacing: 0.1em; margin-top: 2px; }
+
+  .check {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--candle-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* Phone 2: generated book / open book */
+  .p2-content {
+    padding: 70px 22px 22px;
+    height: 100%;
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(212, 148, 42, 0.15), transparent 60%),
+      linear-gradient(180deg, #ede4cd 0%, #d8c79f 100%);
+  }
+
+  .p2-label {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--oxblood);
+    margin-bottom: 8px;
+  }
+
+  .p2-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+    color: var(--ink);
+  }
+
+  .p2-title em {
+    font-family: 'IM Fell English', serif;
+    color: var(--oxblood);
+  }
+
+  .p2-sub {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    color: var(--forest);
+    margin-bottom: 18px;
+    letter-spacing: 0.2em;
+  }
+
+  .cover-art {
+    aspect-ratio: 3/4;
+    background:
+      radial-gradient(circle at 50% 35%, rgba(244, 184, 96, 0.25), transparent 55%),
+      linear-gradient(180deg, #1f3a2a 0%, #0e2018 60%, #1a1208 100%);
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--ink);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+  }
+
+  .cover-art::before {
+    content: '✦';
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--candle-glow);
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  .cover-art::after {
+    content: '✦';
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--candle-glow);
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  .cover-art-text {
+    position: relative;
+    z-index: 2;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 26px;
+    font-weight: 400;
+    line-height: 1;
+    text-align: center;
+    color: var(--candle-glow);
+    text-shadow: 0 0 20px rgba(244, 184, 96, 0.4);
+    padding: 0 20px;
+  }
+
+  .audio-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(26, 18, 8, 0.06);
+    border: 1px solid rgba(26, 18, 8, 0.2);
+    border-radius: 100px;
+  }
+
+  .play-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--candle-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  .progress {
+    flex: 1;
+    height: 2px;
+    background: rgba(26, 18, 8, 0.15);
+    position: relative;
+  }
+
+  .progress::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 35%;
+    background: var(--oxblood);
+  }
+
+  .duration {
+    font-size: 11px;
+    color: var(--ink-faded);
+    font-family: 'Special Elite', serif;
+  }
+
+  /* ==================================================================
+     SLIDE 4 — JOURNEY :: Library card / chapter pages
+     ================================================================== */
+  .journey {
+    background:
+      radial-gradient(ellipse at 50% 100%, rgba(31, 58, 42, 0.06) 0%, transparent 50%),
+      linear-gradient(180deg, #ede4cd 0%, #e0cfa6 100%);
+  }
+
+  .journey-header {
+    margin-bottom: 80px;
+    max-width: 1100px;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 24px;
+    position: relative;
+  }
+
+  .steps::before {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 5%;
+    right: 5%;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, var(--ink-faded) 0 4px, transparent 4px 10px);
+    z-index: 0;
+  }
+
+  .step {
+    position: relative;
+    z-index: 1;
+  }
+
+  .step-num {
+    width: 60px;
+    height: 60px;
+    background: var(--parchment);
+    color: var(--oxblood);
+    border: 2px solid var(--oxblood);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-weight: 400;
+    font-size: 22px;
+    margin-bottom: 28px;
+    box-shadow:
+      inset 0 0 12px rgba(107, 26, 24, 0.1),
+      0 4px 12px rgba(26, 18, 8, 0.15);
+  }
+
+  .step h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.05;
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+  }
+
+  .step p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink-2);
+  }
+
+  /* ==================================================================
+     SLIDE 5 — COMMUNITY :: True crime pinboard
+     ================================================================== */
+  .community {
+    background:
+      radial-gradient(ellipse at 30% 40%, rgba(107, 26, 24, 0.08) 0%, transparent 50%),
+      linear-gradient(180deg, #2a1f10 0%, #1a1208 100%);
+    color: var(--bone);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .community::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='cork'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.95' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23cork)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.15;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+  }
+
+  .community-header {
+    margin-bottom: 56px;
+    max-width: 1100px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .community-lead {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    line-height: 1.65;
+    color: var(--parchment-dark);
+    max-width: 760px;
+    font-style: italic;
+  }
+
+  .community-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .community-features {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .cfeature {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 20px;
+    padding-bottom: 28px;
+    border-bottom: 1px dashed rgba(244, 184, 96, 0.2);
+  }
+
+  .cfeature:last-child { border-bottom: none; }
+
+  .cfeature-num {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 36px;
+    color: var(--candle-glow);
+    line-height: 1;
+  }
+
+  .cfeature h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+    color: var(--bone);
+  }
+
+  .cfeature p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--parchment-dark);
+  }
+
+  .community-phone-wrap {
+    position: relative;
+    height: 760px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .community-phone {
+    position: relative;
+    transform: rotate(-3deg);
+    box-shadow:
+      0 0 0 1px rgba(244, 184, 96, 0.3),
+      0 60px 120px rgba(0, 0, 0, 0.7);
+  }
+
+  .cphone-content {
+    padding: 70px 18px 18px;
+    height: 100%;
+    overflow: hidden;
+    background: linear-gradient(180deg, #f0e3c8 0%, #e0cfa6 100%);
+  }
+
+  .cphone-header {
+    display: flex;
+    gap: 18px;
+    margin-bottom: 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(26, 18, 8, 0.2);
+  }
+
+  .cphone-tab {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--ink-faded);
+    padding-bottom: 6px;
+  }
+
+  .cphone-tab.active {
+    color: var(--oxblood);
+    border-bottom: 2px solid var(--oxblood);
+    font-weight: 600;
+  }
+
+  .cphone-hero {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 14px;
+    margin-bottom: 22px;
+    padding: 12px;
+    background: rgba(26, 18, 8, 0.05);
+    border: 1px solid rgba(26, 18, 8, 0.18);
+  }
+
+  .cphone-hero-art {
+    aspect-ratio: 3/4;
+    background:
+      radial-gradient(circle at 50% 30%, rgba(244, 184, 96, 0.3), transparent 60%),
+      linear-gradient(180deg, #6b1a18 0%, #2a0a0a 60%, #1a1208 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border: 1px solid rgba(0,0,0,0.3);
+  }
+
+  .cphone-hero-text {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 11px;
+    color: var(--candle-glow);
+    text-align: center;
+    line-height: 1;
+    padding: 0 6px;
+  }
+
+  .cphone-hero-meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .cphone-rank {
+    font-family: 'Special Elite', serif;
+    font-size: 9px;
+    color: var(--oxblood);
+    letter-spacing: 0.2em;
+    margin-bottom: 6px;
+  }
+
+  .cphone-hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+
+  .cphone-hero-author {
+    font-size: 11px;
+    color: var(--forest);
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    margin-bottom: 8px;
+  }
+
+  .cphone-hero-stats {
+    font-family: 'Special Elite', serif;
+    font-size: 9px;
+    color: var(--ink-faded);
+    display: flex;
+    gap: 4px;
+  }
+
+  .cphone-section-label {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--oxblood);
+    margin-bottom: 12px;
+  }
+
+  .cphone-row {
+    display: grid;
+    grid-template-columns: 22px 32px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px dotted rgba(26, 18, 8, 0.2);
+    color: var(--ink);
+  }
+
+  .cphone-rank-num {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--oxblood);
+  }
+
+  .cphone-row-art {
+    width: 32px;
+    height: 44px;
+    box-shadow: 1px 1px 3px rgba(26, 18, 8, 0.3);
+  }
+
+  .cphone-row-art.a1 { background: linear-gradient(135deg, #1f3a2a, #0e2018); }
+  .cphone-row-art.a2 { background: linear-gradient(135deg, #6b1a18, #2a0a0a); }
+  .cphone-row-art.a3 { background: linear-gradient(135deg, #d4942a, #6b3818); }
+  .cphone-row-art.a4 { background: linear-gradient(135deg, #4a3820, #1a1208); }
+
+  .cphone-row-info { min-width: 0; }
+  .cphone-row-title { font-family: 'Cormorant Garamond', serif; font-size: 13px; font-weight: 600; line-height: 1.1; margin-bottom: 2px; }
+  .cphone-row-author { font-size: 10px; color: var(--forest); font-family: 'IM Fell English', serif; font-style: italic; }
+
+  .cphone-row-stats { text-align: right; font-family: 'Special Elite', serif; }
+  .cphone-stars { font-size: 10px; color: var(--candle); }
+  .cphone-plays { font-size: 9px; color: var(--ink-faded); }
+
+  /* Polaroid / publish card */
+  .publish-card {
+    position: absolute;
+    bottom: 50px;
+    left: -30px;
+    background: var(--bone);
+    padding: 16px 16px 24px;
+    width: 240px;
+    box-shadow:
+      0 30px 60px rgba(0, 0, 0, 0.5),
+      0 4px 12px rgba(0, 0, 0, 0.3);
+    transform: rotate(3deg);
+    z-index: 5;
+  }
+
+  .publish-card::before {
+    content: '';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-5deg);
+    width: 80px;
+    height: 22px;
+    background: rgba(212, 148, 42, 0.5);
+    border: 1px dashed rgba(107, 26, 24, 0.4);
+  }
+
+  .publish-card-label {
+    font-family: 'Special Elite', serif;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    color: var(--oxblood);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .publish-card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+
+  .publish-card-title em {
+    font-family: 'IM Fell English', serif;
+    color: var(--oxblood);
+  }
+
+  .publish-card-meta {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    color: var(--forest);
+    margin-bottom: 16px;
+    letter-spacing: 0.15em;
+  }
+
+  .publish-card-btn {
+    width: 100%;
+    background: var(--ink);
+    color: var(--candle-glow);
+    border: none;
+    padding: 11px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  /* Red string */
+  .red-string {
+    position: absolute;
+    pointer-events: none;
+    z-index: 4;
+  }
+
+  /* ==================================================================
+     SLIDE 6 — MONETIZATION :: Library tier ledger
+     ================================================================== */
+  .money {
+    background: linear-gradient(180deg, #f0e3c8 0%, #e6d5af 100%);
+    position: relative;
+  }
+
+  .money::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 600 600' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.1, 0 0 0 0 0.07, 0 0 0 0 0.04, 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)' opacity='0.3'/%3E%3C/svg%3E");
+    pointer-events: none;
+    mix-blend-mode: multiply;
+  }
+
+  .money-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 60px;
+    gap: 60px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .money-header .right {
+    text-align: right;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-style: italic;
+    color: var(--ink-2);
+    max-width: 400px;
+    line-height: 1.6;
+  }
+
+  .tiers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .tier {
+    background: linear-gradient(180deg, #ede4cd 0%, #d8c79f 100%);
+    border: 1px solid var(--ink-faded);
+    padding: 36px 28px;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 6px 20px rgba(26, 18, 8, 0.15);
+  }
+
+  .tier::before {
+    content: '';
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    border: 1px dashed rgba(26, 18, 8, 0.15);
+    pointer-events: none;
+  }
+
+  .tier-num {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    color: var(--oxblood);
+    letter-spacing: 0.3em;
+    margin-bottom: 16px;
+  }
+
+  .tier-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+    line-height: 1;
+    color: var(--ink);
+  }
+
+  .tier-name em {
+    font-family: 'IM Fell English', serif;
+    color: var(--oxblood);
+  }
+
+  .tier-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 56px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+  }
+
+  .tier-price .currency {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 26px;
+    vertical-align: super;
+    color: var(--oxblood);
+  }
+
+  .tier-cycle {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    color: var(--ink-faded);
+    letter-spacing: 0.25em;
+    margin-bottom: 32px;
+  }
+
+  .tier-features { list-style: none; flex: 1; }
+
+  .tier-features li {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px;
+    padding: 10px 0;
+    border-bottom: 1px dotted rgba(26, 18, 8, 0.2);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    line-height: 1.4;
+    color: var(--ink-2);
+  }
+
+  .tier-features li::before {
+    content: '✦';
+    color: var(--oxblood);
+    flex-shrink: 0;
+    font-size: 11px;
+    margin-top: 3px;
+  }
+
+  .tier.featured {
+    background: linear-gradient(180deg, #2a1f10 0%, #1a1208 100%);
+    color: var(--bone);
+    border-color: var(--candle);
+    transform: translateY(-12px);
+    box-shadow: 0 14px 32px rgba(26, 18, 8, 0.3);
+  }
+
+  .tier.featured::before { border-color: rgba(244, 184, 96, 0.3); }
+
+  .tier.featured .tier-name { color: var(--candle-glow); }
+  .tier.featured .tier-name em { color: var(--candle-glow); }
+  .tier.featured .tier-price { color: var(--bone); }
+  .tier.featured .tier-price .currency { color: var(--candle-glow); }
+  .tier.featured .tier-cycle { color: var(--candle-glow); }
+  .tier.featured .tier-features li {
+    color: var(--parchment-dark);
+    border-color: rgba(244, 184, 96, 0.15);
+  }
+  .tier.featured .tier-features li::before { color: var(--candle-glow); }
+  .tier.featured .tier-num { color: var(--candle-glow); }
+
+  .featured-flag {
+    position: absolute;
+    top: -10px;
+    right: 22px;
+    background: var(--oxblood);
+    color: var(--candle-glow);
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    padding: 5px 14px;
+    transform: rotate(2deg);
+    box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  /* ==================================================================
+     SLIDE 7 — NOTES / DETAILS :: Mixed-genre artifacts
+     ================================================================== */
+  .notes {
+    background: linear-gradient(180deg, #ede4cd 0%, #d8c79f 100%);
+  }
+
+  .notes-header { margin-bottom: 60px; }
+
+  .notes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+
+  .note-card {
+    background: var(--bone);
+    border: 1px solid rgba(26, 18, 8, 0.2);
+    padding: 36px 32px;
+    display: flex;
+    flex-direction: column;
+    min-height: 540px;
+    position: relative;
+    box-shadow: 0 4px 16px rgba(26, 18, 8, 0.1);
+  }
+
+  .note-card::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: 24px;
+    width: 50px;
+    height: 18px;
+    background: rgba(212, 148, 42, 0.4);
+    border: 1px dashed rgba(107, 26, 24, 0.3);
+    transform: rotate(-3deg);
+  }
+
+  .note-card.featured-note {
+    background: linear-gradient(180deg, #2a1f10 0%, #1a1208 100%);
+    color: var(--bone);
+    border-color: var(--candle);
+  }
+
+  .note-num {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    color: var(--oxblood);
+    letter-spacing: 0.3em;
+    margin-bottom: 24px;
+  }
+
+  .featured-note .note-num { color: var(--candle-glow); }
+
+  .note-card h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    color: var(--ink);
+  }
+
+  .featured-note h3 { color: var(--bone); }
+
+  .note-card h3 em {
+    font-family: 'IM Fell English', serif;
+    color: var(--oxblood);
+  }
+
+  .featured-note h3 em { color: var(--candle-glow); }
+
+  .note-card p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-2);
+    margin-bottom: 28px;
+  }
+
+  .featured-note p { color: var(--parchment-dark); }
+
+  .featured-note p em {
+    font-family: 'IM Fell English', serif;
+    color: var(--candle-glow);
+    font-style: italic;
+  }
+
+  /* age spectrum */
+  .age-spectrum {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: auto;
+  }
+
+  .age-pill {
+    flex: 1;
+    min-width: 60px;
+    text-align: center;
+    padding: 14px 8px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    border: 1px solid var(--ink-faded);
+  }
+
+  .age-1 { background: rgba(244, 184, 96, 0.15); color: var(--ink); }
+  .age-2 { background: rgba(212, 148, 42, 0.4); color: var(--ink); }
+  .age-3 { background: var(--candle); color: var(--bone); border-color: var(--candle); }
+  .age-4 { background: var(--oxblood); color: var(--bone); border-color: var(--oxblood); }
+  .age-5 { background: var(--ink); color: var(--bone); border-color: var(--ink); }
+
+  /* badge mockup */
+  .badge-mockup {
+    background: rgba(244, 184, 96, 0.08);
+    border: 1px dashed rgba(244, 184, 96, 0.3);
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    margin-top: auto;
+  }
+
+  .badge-mock-cover {
+    width: 70px;
+    height: 100px;
+    background: linear-gradient(135deg, #6b1a18, #2a0a0a);
+    flex-shrink: 0;
+    box-shadow: 1px 2px 6px rgba(0, 0, 0, 0.4);
+  }
+
+  .badge-mock-info { flex: 1; min-width: 0; }
+
+  .badge-mock-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.1;
+    margin-bottom: 4px;
+    color: var(--bone);
+  }
+
+  .badge-mock-meta {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    color: var(--candle-glow);
+    margin-bottom: 12px;
+    letter-spacing: 0.15em;
+  }
+
+  .badges-row { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  .content-badge {
+    background: rgba(244, 184, 96, 0.1);
+    border: 1px solid var(--candle);
+    color: var(--candle-glow);
+    font-family: 'Special Elite', serif;
+    font-size: 9px;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .content-badge span { font-size: 11px; }
+
+  /* preview mockup */
+  .preview-mockup {
+    margin-top: auto;
+    background: rgba(26, 18, 8, 0.04);
+    padding: 20px;
+    border: 1px solid rgba(26, 18, 8, 0.2);
+  }
+
+  .preview-row { margin-bottom: 18px; }
+
+  .preview-label {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    margin-bottom: 8px;
+    color: var(--ink-faded);
+  }
+
+  .preview-row.paid .preview-label { color: var(--oxblood); }
+
+  .preview-bar {
+    height: 4px;
+    background: rgba(26, 18, 8, 0.1);
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+
+  .preview-bar-fill { height: 100%; }
+
+  .preview-detail {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--ink-faded);
+  }
+
+  .preview-row.paid .preview-detail { color: var(--ink-2); }
+
+  .preview-cta {
+    width: 100%;
+    background: var(--ink);
+    color: var(--candle-glow);
+    border: none;
+    padding: 12px;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    cursor: pointer;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+
+  .notes-footer {
+    margin-top: 60px;
+    padding-top: 40px;
+    border-top: 1px solid var(--ink-faded);
+  }
+
+  .notes-footer-label {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--oxblood);
+    margin-bottom: 24px;
+  }
+
+  .notes-footer-items {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+  }
+
+  .footer-item {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-2);
+  }
+
+  .footer-item strong {
+    color: var(--ink);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 6px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-style: italic;
+  }
+
+  .footer-item strong em {
+    font-family: 'IM Fell English', serif;
+    color: var(--oxblood);
+    font-style: italic;
+    font-weight: 400;
+  }
+
+  /* ==================================================================
+     SLIDE 8 — ROADMAP :: Quest map / journey scroll
+     ================================================================== */
+  .roadmap {
+    background:
+      radial-gradient(ellipse at 50% 0%, rgba(31, 58, 42, 0.06) 0%, transparent 50%),
+      linear-gradient(180deg, #ede4cd 0%, #e0cfa6 100%);
+  }
+
+  .timeline {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    position: relative;
+    margin-top: 80px;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    right: 30px;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, var(--ink) 0 8px, transparent 8px 14px);
+  }
+
+  .phase {
+    padding-top: 80px;
+    padding-right: 24px;
+    position: relative;
+  }
+
+  .phase::before {
+    content: '✦';
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 32px;
+    height: 32px;
+    background: var(--parchment);
+    color: var(--ink);
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    font-family: 'Cormorant Garamond', serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .phase-1::before { color: var(--forest); border-color: var(--forest); }
+  .phase-2::before { color: var(--oxblood); border-color: var(--oxblood); }
+  .phase-3::before { color: var(--candle); border-color: var(--candle); }
+  .phase-4::before { color: var(--ink); border-color: var(--ink); background: var(--candle-glow); }
+
+  .phase-time {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    margin-bottom: 14px;
+    color: var(--oxblood);
+  }
+
+  .phase h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+    color: var(--ink);
+  }
+
+  .phase h3 em {
+    font-family: 'IM Fell English', serif;
+    color: var(--oxblood);
+  }
+
+  .phase p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-2);
+    margin-bottom: 16px;
+  }
+
+  .phase-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .phase-tag {
+    font-family: 'Special Elite', serif;
+    font-size: 10px;
+    padding: 4px 10px;
+    border: 1px solid var(--ink-faded);
+    color: var(--ink-2);
+    letter-spacing: 0.05em;
+  }
+
+  /* ==================================================================
+     SLIDE 9 — MARKET :: Comparison ledger
+     ================================================================== */
+  .market {
+    background: linear-gradient(180deg, #2a1f10 0%, #1a1208 100%);
+    color: var(--bone);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    position: relative;
+  }
+
+  .market::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+    opacity: 0.15;
+    pointer-events: none;
+    mix-blend-mode: overlay;
+  }
+
+  .market-left {
+    position: relative;
+    z-index: 2;
+  }
+
+  .market-left p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    line-height: 1.7;
+    max-width: 520px;
+    color: var(--parchment-dark);
+    margin-bottom: 22px;
+  }
+
+  .market-left p em {
+    font-family: 'IM Fell English', serif;
+    color: var(--candle-glow);
+  }
+
+  .market-quote {
+    border-left: 2px solid var(--candle-glow);
+    padding-left: 28px;
+    margin-top: 36px;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--bone);
+    line-height: 1.45;
+  }
+
+  .market-quote::before {
+    content: '"';
+    font-family: 'UnifrakturCook', serif;
+    color: var(--candle-glow);
+    font-size: 60px;
+    line-height: 0;
+    margin-right: 6px;
+    vertical-align: -10px;
+  }
+
+  .market-right {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: rgba(244, 184, 96, 0.2);
+    border: 1px solid rgba(244, 184, 96, 0.3);
+    position: relative;
+    z-index: 2;
+  }
+
+  .competitor-row {
+    display: grid;
+    grid-template-columns: 1fr 60px 60px 60px 60px;
+    gap: 8px;
+    padding: 14px 18px;
+    background: #2a1f10;
+    align-items: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    color: var(--bone);
+  }
+
+  .competitor-row.header {
+    background: #1a1208;
+    color: var(--candle-glow);
+    font-family: 'IM Fell English SC', serif;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    padding: 12px 18px;
+  }
+
+  .competitor-row.us {
+    background: linear-gradient(90deg, #6b1a18, #d4942a);
+    color: var(--bone);
+    font-weight: 700;
+    font-family: 'UnifrakturCook', serif;
+    font-size: 18px;
+    letter-spacing: 0.02em;
+  }
+
+  .check-cell { text-align: center; font-size: 18px; }
+  .check-cell.yes { color: var(--candle-glow); }
+  .check-cell.no { color: rgba(212, 195, 159, 0.3); }
+  .competitor-row.us .check-cell.yes { color: var(--bone); }
+
+  /* ==================================================================
+     SLIDE 10 — ASK :: Closing illuminated page
+     ================================================================== */
+  .ask {
+    background:
+      radial-gradient(ellipse at 30% 100%, rgba(244, 184, 96, 0.18) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 0%, rgba(107, 26, 24, 0.15) 0%, transparent 50%),
+      linear-gradient(180deg, #1a1208 0%, #2a1f10 100%);
+    color: var(--bone);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .ask::before {
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(244, 184, 96, 0.1) 0%, transparent 60%);
+    pointer-events: none;
+    animation: candle-flicker 4s ease-in-out infinite;
+  }
+
+  .ask-content {
+    z-index: 2;
+    position: relative;
+    margin: auto 0;
+    max-width: 1400px;
+  }
+
+  .ask .big {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(64px, 8.5vw, 140px);
+    line-height: 0.9;
+    letter-spacing: -0.03em;
+    font-weight: 500;
+    margin-bottom: 60px;
+    color: var(--bone);
+  }
+
+  .ask .big em {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--candle-glow);
+    text-shadow: 0 0 40px rgba(244, 184, 96, 0.4);
+  }
+
+  .ask .big .ornate {
+    font-family: 'UnifrakturCook', serif;
+    font-style: normal;
+    color: var(--candle);
+    font-size: 0.85em;
+  }
+
+  .roles {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    max-width: 1300px;
+  }
+
+  .role {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(244, 184, 96, 0.25);
+    padding: 36px 30px;
+    position: relative;
+  }
+
+  .role::before {
+    content: '✦';
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    color: var(--candle-glow);
+    font-size: 14px;
+    opacity: 0.5;
+  }
+
+  .role-num {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 11px;
+    color: var(--oxblood);
+    letter-spacing: 0.3em;
+    margin-bottom: 16px;
+    color: var(--candle-glow);
+  }
+
+  .role h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    letter-spacing: -0.02em;
+    color: var(--bone);
+  }
+
+  .role h3 em {
+    font-family: 'IM Fell English', serif;
+    color: var(--candle-glow);
+  }
+
+  .role p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--parchment-dark);
+    margin-bottom: 18px;
+  }
+
+  .role-skills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .role-skill {
+    font-family: 'Special Elite', serif;
+    font-size: 10px;
+    padding: 4px 10px;
+    background: rgba(244, 184, 96, 0.08);
+    color: var(--candle-glow);
+    letter-spacing: 0.05em;
+    border: 1px solid rgba(244, 184, 96, 0.3);
+  }
+
+  .ask-footer {
+    z-index: 2;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding-top: 80px;
+    border-top: 1px solid rgba(244, 184, 96, 0.2);
+  }
+
+  .ask-footer-left {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    max-width: 700px;
+    color: var(--bone);
+  }
+
+  .ask-footer-left em {
+    font-family: 'IM Fell English', serif;
+    color: var(--candle-glow);
+    font-style: italic;
+  }
+
+  .ask-cta {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    color: var(--ink);
+    background: var(--candle-glow);
+    padding: 18px 32px;
+    text-decoration: none;
+    box-shadow: 0 0 24px rgba(244, 184, 96, 0.3);
+    font-weight: 600;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    section { padding: 60px 32px; }
+    .problem-grid, .solution-grid, .market, .community-grid { grid-template-columns: 1fr; gap: 40px; }
+    .steps { grid-template-columns: 1fr 1fr; }
+    .steps::before { display: none; }
+    .tiers, .timeline { grid-template-columns: 1fr 1fr; }
+    .timeline::before { display: none; }
+    .roles { grid-template-columns: 1fr; }
+    .phone-stack { height: 600px; }
+    .community-phone-wrap { height: 720px; }
+    .publish-card { left: 0; }
+    .notes-grid { grid-template-columns: 1fr; }
+    .note-card { min-height: auto; }
+    .notes-footer-items { grid-template-columns: 1fr; gap: 20px; }
+    .evidence-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+  }
+
+  @media (max-width: 640px) {
+    section { padding: 50px 24px; }
+    .stats-grid, .tiers, .steps, .timeline, .evidence-grid { grid-template-columns: 1fr; }
+    .ask-footer { flex-direction: column; align-items: flex-start; gap: 30px; }
+    .money-header { flex-direction: column; gap: 30px; align-items: flex-start; }
+    .money-header .right { text-align: left; }
+    .tier.featured { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ==================================================================
+     SLIDE 1 — HERO :: OLD LIBRARY
+     ================================================================== -->
+<section class="hero">
+  <div class="hero-top">
+    <div>
+      <div class="brand">Inkwyrm</div>
+      <div class="brand-tagline">A Storytelling Engine · Est. MMXXVI</div>
+    </div>
+    <div class="deck-meta">
+      Pitch <span class="deck-meta-divider"></span> Volume I<br>
+      Folio of Founders
+    </div>
+  </div>
+
+  <div class="hero-center">
+    <div class="hero-flourish">A tale told only for thee</div>
+    <h1>
+      The book that didn't<br>
+      exist <em>until you</em><br>
+      <span class="ornate">whispered for it.</span>
+    </h1>
+  </div>
+
+  <div class="hero-bottom">
+    <div class="hero-tag">
+      <span class="drop">I</span>nkwyrm reads what you love — your fantasies, your mysteries, your ghost stories — and conjures a brand-new audiobook tuned to your taste, your mood, your night.
+    </div>
+    <div class="scroll-indicator">Turn the page</div>
+  </div>
+</section>
+
+<!-- ==================================================================
+     SLIDE 2 — PROBLEM :: NOIR OFFICE
+     ================================================================== -->
+<section class="problem">
+  <div class="slide-num"><span>II</span> · The Trouble</div>
+
+  <div class="problem-grid">
+    <div class="problem-left">
+      <div class="case-stamp">CASE FILE · 001</div>
+      <div class="section-eyebrow">The Problem</div>
+      <h2 class="section-title">
+        Every story you've <em>loved</em> — and the one you've never written.
+      </h2>
+      <p>
+        Listeners burn through their library and miss long drives because nothing sounds right.
+        Meanwhile, millions sit on a story they'll never write — the bar is too high, the page is too blank.
+        <em>Inkwyrm is built for both.</em>
+      </p>
+    </div>
+
+    <div class="evidence-grid">
+      <div class="evidence-card">
+        <div class="evidence-label">EXHIBIT A</div>
+        <div class="evidence-num">$<em>9.4B</em></div>
+        <div class="evidence-text">Global audiobook market — among the fastest-growing media segments.</div>
+      </div>
+      <div class="evidence-card">
+        <div class="evidence-label">EXHIBIT B</div>
+        <div class="evidence-num">81<em>%</em></div>
+        <div class="evidence-text">Of listeners say they re-listen because nothing new sounds right.</div>
+      </div>
+      <div class="evidence-card">
+        <div class="evidence-label">EXHIBIT C</div>
+        <div class="evidence-num">200<em>M+</em></div>
+        <div class="evidence-text">People who've said "I have a book in me" — and never wrote it.</div>
+      </div>
+      <div class="evidence-card">
+        <div class="evidence-label">EXHIBIT D</div>
+        <div class="evidence-num"><span class="red">∅</span></div>
+        <div class="evidence-text">Apps today that turn your taste into your next custom audiobook.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================================
+     SLIDE 3 — SOLUTION :: MAP ROOM
+     ================================================================== -->
+<section class="solution">
+  <div class="slide-num"><span>III</span> · The Remedy</div>
+
+  <div class="solution-grid">
+    <div class="solution-left">
+      <div class="section-eyebrow">The Solution</div>
+      <h2 class="section-title">
+        A scriptorium in your pocket — writing <em>for you, about you, like you.</em>
+      </h2>
+      <p>
+        Inkwyrm builds a Taste Profile from the books, films, and characters you love.
+        Tell it the mood, the length, the intensity — and it pens a brand-new audiobook on the spot,
+        <em>voiced, scored, and ready before you turn the key.</em>
+      </p>
+
+      <div class="pillars">
+        <div class="pillar">
+          <div class="pillar-num">I</div>
+          <div class="pillar-title">Taste Profile</div>
+          <div class="pillar-desc">Search the canon. Tap your favorites. We learn your patterns.</div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-num">II</div>
+          <div class="pillar-title">Custom Tale</div>
+          <div class="pillar-desc">Mood, length, lead, intensity. Conjured on demand.</div>
+        </div>
+        <div class="pillar">
+          <div class="pillar-num">III</div>
+          <div class="pillar-title">Publish & Earn</div>
+          <div class="pillar-desc">Push to the shelf. Readers, ratings, royalties.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone-stack">
+      <div class="phone phone-1">
+        <div class="phone-screen">
+          <div class="p1-content">
+            <div class="p1-step">CHAPTER II OF IV — TASTE PROFILE</div>
+            <div class="p1-q">What <em>worlds</em> own your nights?</div>
+            <div class="tag-grid">
+              <div class="tag active">Fantasy</div>
+              <div class="tag active">Mystery</div>
+              <div class="tag active">True Crime</div>
+              <div class="tag active">Horror</div>
+              <div class="tag">Romance</div>
+              <div class="tag active">Sci-Fi</div>
+              <div class="tag">Thriller</div>
+            </div>
+            <div class="input-search">⌕  Search the library…</div>
+            <div class="book-row">
+              <div class="book-cover b1"></div>
+              <div class="book-info">
+                <div class="book-title">Harry Potter & the Half-Blood Prince</div>
+                <div class="book-author">J.K. ROWLING</div>
+              </div>
+              <div class="check">✓</div>
+            </div>
+            <div class="book-row">
+              <div class="book-cover b2"></div>
+              <div class="book-info">
+                <div class="book-title">The Fellowship of the Ring</div>
+                <div class="book-author">J.R.R. TOLKIEN</div>
+              </div>
+              <div class="check">✓</div>
+            </div>
+            <div class="book-row">
+              <div class="book-cover b3"></div>
+              <div class="book-info">
+                <div class="book-title">In Cold Blood</div>
+                <div class="book-author">TRUMAN CAPOTE</div>
+              </div>
+              <div class="check">✓</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phone phone-2">
+        <div class="phone-screen">
+          <div class="p2-content">
+            <div class="p2-label">YOUR ROAD TALE · 4H 12M</div>
+            <div class="p2-title">The Hollow<br><em>Between Stars</em></div>
+            <div class="p2-sub">FANTASY · MYSTERY · SLOW-BURN</div>
+            <div class="cover-art">
+              <div class="cover-art-text">The Hollow<br>Between Stars</div>
+            </div>
+            <div class="audio-controls">
+              <div class="play-btn">▶</div>
+              <div class="progress"></div>
+              <div class="duration">1:24:08</div>
+            </div>
+            <div style="margin-top: 14px; font-family: 'IM Fell English', serif; font-size: 11px; color: var(--ink-faded); line-height: 1.5; font-style: italic;">
+              Voice: <span style="color: var(--ink); font-style: normal;">"Gravelly · Patient · Cinematic"</span><br>
+              Score: candlelight strings & low brass
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================================
+     SLIDE 4 — JOURNEY :: CHAPTER PAGES
+     ================================================================== -->
+<section class="journey">
+  <div class="slide-num"><span>IV</span> · The Journey</div>
+
+  <div class="journey-header">
+    <div class="section-eyebrow">How It Works</div>
+    <h2 class="section-title">From "I want a story" to <em>pressing play</em> in five minutes flat.</h2>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">i</div>
+      <h3>Onboard</h3>
+      <p>A quick survey. Tap your favorite genres, books, films, and characters from a searchable library.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">ii</div>
+      <h3>Profile</h3>
+      <p>The app builds a Taste Profile — themes, tone, intensity, the archetypes you keep returning to.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">iii</div>
+      <h3>Brief</h3>
+      <p>Tell it the moment. Long drive? Sleepless night? Set length, lead, mood, intensity, perspective.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">iv</div>
+      <h3>Generate</h3>
+      <p>A custom story is written, narrated in the voice you chose, scored if you want immersive audio.</p>
+    </div>
+    <div class="step">
+      <div class="step-num">v</div>
+      <h3>Publish</h3>
+      <p>Love it? Push it to the Inkwyrm shelf. Earn from reads, build a following, get noticed.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================================
+     SLIDE 5 — COMMUNITY :: TRUE-CRIME PINBOARD
+     ================================================================== -->
+<section class="community">
+  <div class="slide-num"><span>V</span> · The Shelf</div>
+
+  <div class="community-header">
+    <div class="section-eyebrow light">The Community</div>
+    <h2 class="section-title light">Every reader is a <em>writer.</em><br>Every writer has readers.</h2>
+    <p class="community-lead">
+      Push your story to the Inkwyrm shelf. The community reads, rates, ranks. Trade Taste Profiles
+      with other authors, build a following, climb the charts. The best stories get noticed by real publishers.
+    </p>
+  </div>
+
+  <div class="community-grid">
+    <div class="community-features">
+      <div class="cfeature">
+        <div class="cfeature-num">i</div>
+        <div>
+          <h4>Publish in one tap</h4>
+          <p>Story written? Push it to the shelf. Cover art and audio come along automatically.</p>
+        </div>
+      </div>
+      <div class="cfeature">
+        <div class="cfeature-num">ii</div>
+        <div>
+          <h4>Read, rate, rank</h4>
+          <p>Listeners give stars, leave reactions, follow the authors whose taste matches their own.</p>
+        </div>
+      </div>
+      <div class="cfeature">
+        <div class="cfeature-num">iii</div>
+        <div>
+          <h4>Trade & remix</h4>
+          <p>Send a friend your Taste Profile. Generate a story together. Co-author across cities.</p>
+        </div>
+      </div>
+      <div class="cfeature">
+        <div class="cfeature-num">iv</div>
+        <div>
+          <h4>Get discovered</h4>
+          <p>Top-ranked stories surface to publishers and agents. Your shelf becomes your portfolio.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="community-phone-wrap">
+      <div class="phone community-phone">
+        <div class="phone-screen">
+          <div class="cphone-content">
+            <div class="cphone-header">
+              <div class="cphone-tab">Shelf</div>
+              <div class="cphone-tab active">Trending</div>
+              <div class="cphone-tab">Following</div>
+            </div>
+
+            <div class="cphone-hero">
+              <div class="cphone-hero-art"><div class="cphone-hero-text">Pale<br>Engine</div></div>
+              <div class="cphone-hero-meta">
+                <div class="cphone-rank">★ NO. I THIS WEEK</div>
+                <div class="cphone-hero-title">Pale Engine</div>
+                <div class="cphone-hero-author">@marcus_r</div>
+                <div class="cphone-hero-stats"><span>★ 4.8</span><span>·</span><span>12.4K plays</span></div>
+              </div>
+            </div>
+
+            <div class="cphone-section-label">RISING THIS WEEK</div>
+
+            <div class="cphone-row">
+              <div class="cphone-rank-num">ii</div>
+              <div class="cphone-row-art a1"></div>
+              <div class="cphone-row-info">
+                <div class="cphone-row-title">The Quiet Floor</div>
+                <div class="cphone-row-author">@elena_b · Horror</div>
+              </div>
+              <div class="cphone-row-stats">
+                <div class="cphone-stars">★ 4.7</div>
+                <div class="cphone-plays">8.1K</div>
+              </div>
+            </div>
+
+            <div class="cphone-row">
+              <div class="cphone-rank-num">iii</div>
+              <div class="cphone-row-art a2"></div>
+              <div class="cphone-row-info">
+                <div class="cphone-row-title">Salt & Static</div>
+                <div class="cphone-row-author">@gambit · Sci-fi</div>
+              </div>
+              <div class="cphone-row-stats">
+                <div class="cphone-stars">★ 4.9</div>
+                <div class="cphone-plays">6.8K</div>
+              </div>
+            </div>
+
+            <div class="cphone-row">
+              <div class="cphone-rank-num">iv</div>
+              <div class="cphone-row-art a3"></div>
+              <div class="cphone-row-info">
+                <div class="cphone-row-title">Mother Tongue</div>
+                <div class="cphone-row-author">@j_lin · Mystery</div>
+              </div>
+              <div class="cphone-row-stats">
+                <div class="cphone-stars">★ 4.6</div>
+                <div class="cphone-plays">5.3K</div>
+              </div>
+            </div>
+
+            <div class="cphone-row">
+              <div class="cphone-rank-num">v</div>
+              <div class="cphone-row-art a4"></div>
+              <div class="cphone-row-info">
+                <div class="cphone-row-title">Reverie Hotel</div>
+                <div class="cphone-row-author">@s_okafor · Drama</div>
+              </div>
+              <div class="cphone-row-stats">
+                <div class="cphone-stars">★ 4.5</div>
+                <div class="cphone-plays">4.9K</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="publish-card">
+        <div class="publish-card-label">YOUR TALE · READY</div>
+        <div class="publish-card-title">The Hollow <em>Between Stars</em></div>
+        <div class="publish-card-meta">4H 12M · FANTASY · NOIR</div>
+        <button class="publish-card-btn">Publish to Shelf →</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================================
+     SLIDE 6 — MONEY :: TIER LEDGER
+     ================================================================== -->
+<section class="money">
+  <div class="slide-num"><span>VI</span> · The Ledger</div>
+
+  <div class="money-header">
+    <div>
+      <div class="section-eyebrow">Pricing & Tiers</div>
+      <h2 class="section-title">Free to <em>create.</em><br>Pay to elevate.</h2>
+    </div>
+    <div class="right">
+      Generation is the hook. Voice quality, sound design, illustration, and publishing rights are the upgrades.
+      Tiered pricing keeps the floor accessible and the ceiling profitable.
+    </div>
+  </div>
+
+  <div class="tiers">
+    <div class="tier">
+      <div class="tier-num">TIER I</div>
+      <div class="tier-name">Reader</div>
+      <div class="tier-price"><span class="currency">$</span>0</div>
+      <div class="tier-cycle">Forever</div>
+      <ul class="tier-features">
+        <li>3 generations a month</li>
+        <li>Standard narrator voices</li>
+        <li>Browse community shelf</li>
+        <li>Basic Taste Profile</li>
+      </ul>
+    </div>
+
+    <div class="tier featured">
+      <div class="featured-flag">CORE</div>
+      <div class="tier-num">TIER II</div>
+      <div class="tier-name"><em>Author</em></div>
+      <div class="tier-price"><span class="currency">$</span>9</div>
+      <div class="tier-cycle">Per month</div>
+      <ul class="tier-features">
+        <li>Unlimited generations</li>
+        <li>Premium narrator styles</li>
+        <li>Per-character voice casting</li>
+        <li>Publish to community shelf</li>
+        <li>Earn from reads (98% to you)</li>
+      </ul>
+    </div>
+
+    <div class="tier">
+      <div class="tier-num">TIER III</div>
+      <div class="tier-name">Studio</div>
+      <div class="tier-price"><span class="currency">+</span>5</div>
+      <div class="tier-cycle">Per book add-on</div>
+      <ul class="tier-features">
+        <li>Layered ambient sound design</li>
+        <li>Scene-aware music score</li>
+        <li>Character voice fine-tuning</li>
+        <li>Cinematic mix mastering</li>
+      </ul>
+    </div>
+
+    <div class="tier">
+      <div class="tier-num">TIER IV</div>
+      <div class="tier-name">Visual</div>
+      <div class="tier-price"><span class="currency">+</span>30</div>
+      <div class="tier-cycle">Per book · Future</div>
+      <ul class="tier-features">
+        <li>Comic-book visual adaptation</li>
+        <li>Consistent character art</li>
+        <li>Panel-by-panel scenes</li>
+        <li>Print-on-demand option</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================================
+     SLIDE 7 — DETAILS
+     ================================================================== -->
+<section class="notes">
+  <div class="slide-num"><span>VII</span> · Marginalia</div>
+
+  <div class="notes-header">
+    <div class="section-eyebrow">Smart Details</div>
+    <h2 class="section-title">The little things that make it <em>land.</em></h2>
+  </div>
+
+  <div class="notes-grid">
+
+    <div class="note-card">
+      <div class="note-num">DETAIL I</div>
+      <h3>From bedtime stories to <em>R-rated thrillers.</em></h3>
+      <p>
+        Inkwyrm generates across the full age spectrum — children's read-alongs, young adult adventures,
+        adult drama, true crime, horror. One platform, every audience.
+      </p>
+      <div class="age-spectrum">
+        <div class="age-pill age-1">Kids</div>
+        <div class="age-pill age-2">Tween</div>
+        <div class="age-pill age-3">Teen</div>
+        <div class="age-pill age-4">Adult</div>
+        <div class="age-pill age-5">Mature</div>
+      </div>
+    </div>
+
+    <div class="note-card featured-note">
+      <div class="note-num">DETAIL II</div>
+      <h3>Content tags that <em>warn and entice.</em></h3>
+      <p>
+        Every story carries visual badges — violence, language, intimacy, intensity. Parents see them
+        as safeguards. Adults see them as <em>signals.</em> Just as an R rating makes a film more
+        appealing to the right audience.
+      </p>
+
+      <div class="badge-mockup">
+        <div class="badge-mock-cover"></div>
+        <div class="badge-mock-info">
+          <div class="badge-mock-title">The Hollow Between Stars</div>
+          <div class="badge-mock-meta">FANTASY · NOIR · 4H 12M</div>
+          <div class="badges-row">
+            <div class="content-badge"><span>🗡</span> Graphic</div>
+            <div class="content-badge"><span>🕯</span> Intense</div>
+            <div class="content-badge"><span>✒</span> Strong language</div>
+            <div class="content-badge"><span>18+</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="note-card">
+      <div class="note-num">DETAIL III</div>
+      <h3>Hear the upgrade <em>before you buy.</em></h3>
+      <p>
+        After your free generation, get a 30-second preview of the same scene with the premium narrator,
+        ambient score, and sound design layered in. Experience the upgrade — don't just imagine it.
+      </p>
+
+      <div class="preview-mockup">
+        <div class="preview-row free">
+          <div class="preview-label">FREE TIER</div>
+          <div class="preview-bar">
+            <div class="preview-bar-fill" style="width: 100%; background: rgba(26, 18, 8, 0.25);"></div>
+          </div>
+          <div class="preview-detail">Standard narrator · Voice only</div>
+        </div>
+        <div class="preview-row paid">
+          <div class="preview-label">▶ PREMIUM PREVIEW · 0:30</div>
+          <div class="preview-bar">
+            <div class="preview-bar-fill" style="width: 65%; background: linear-gradient(90deg, var(--oxblood), var(--candle));"></div>
+          </div>
+          <div class="preview-detail">Custom voice · Score · Sound design</div>
+        </div>
+        <button class="preview-cta">Unlock Full Audio — $5</button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="notes-footer">
+    <div class="notes-footer-label">ALSO IN THE BACKLOG</div>
+    <div class="notes-footer-items">
+      <div class="footer-item">
+        <strong><em>Edit-before-publish layer.</em></strong>
+        Tap any paragraph to refine it. Highlight a passage and tell the AI to "make it darker" or "tighten the dialogue" — it regenerates just that section. Sentence-level control, versioned and undoable.
+      </div>
+      <div class="footer-item">
+        <strong><em>Co-author mode.</em></strong>
+        Send your Taste Profile to a friend, generate a story together across devices.
+      </div>
+      <div class="footer-item">
+        <strong><em>Plagiarism scan.</em></strong>
+        Every story checked against published works before it can be pushed to the shelf.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================================
+     SLIDE 8 — ROADMAP :: QUEST MAP
+     ================================================================== -->
+<section class="roadmap">
+  <div class="slide-num"><span>VIII</span> · The Quest</div>
+
+  <div class="section-eyebrow">The Roadmap</div>
+  <h2 class="section-title">Audio first. Then sound. Then sight. <em>Then the shelf.</em></h2>
+
+  <div class="timeline">
+    <div class="phase phase-1">
+      <div class="phase-time">Q1 — MVP</div>
+      <h3><em>Listen</em></h3>
+      <p>Taste Profile and custom audiobook generation with single narrator voice. Friends-and-family beta.</p>
+      <div class="phase-tags">
+        <span class="phase-tag">iOS</span>
+        <span class="phase-tag">TTS</span>
+        <span class="phase-tag">LLM</span>
+      </div>
+    </div>
+    <div class="phase phase-2">
+      <div class="phase-time">Q2 — V1</div>
+      <h3><em>Immerse</em></h3>
+      <p>Per-character voices, ambient sound design, narrator-style picker, premium tier launch.</p>
+      <div class="phase-tags">
+        <span class="phase-tag">ElevenLabs</span>
+        <span class="phase-tag">Sound FX</span>
+        <span class="phase-tag">Stripe</span>
+      </div>
+    </div>
+    <div class="phase phase-3">
+      <div class="phase-time">Q3 — V2</div>
+      <h3><em>Publish</em></h3>
+      <p>Community shelf, ratings, leaderboards, royalty splits, plagiarism scanning before publish.</p>
+      <div class="phase-tags">
+        <span class="phase-tag">Marketplace</span>
+        <span class="phase-tag">Social</span>
+        <span class="phase-tag">Royalties</span>
+      </div>
+    </div>
+    <div class="phase phase-4">
+      <div class="phase-time">Q4+ — V3</div>
+      <h3><em>See</em></h3>
+      <p>Visual adaptation engine, comic-style covers and scenes, print-on-demand, publisher partnerships.</p>
+      <div class="phase-tags">
+        <span class="phase-tag">Image gen</span>
+        <span class="phase-tag">Print on Demand</span>
+        <span class="phase-tag">Publishers</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================================
+     SLIDE 9 — MARKET :: COMPARISON LEDGER
+     ================================================================== -->
+<section class="market">
+  <div class="slide-num"><span>IX</span> · The Field</div>
+
+  <div class="market-left">
+    <div class="section-eyebrow light">The Market</div>
+    <h2 class="section-title light">A <em>blue space</em> between three crowded ones.</h2>
+    <p>
+      AI writing tools generate. Recommendation apps suggest. Audiobook platforms host.
+      No one ties all three together — and no one personalizes from the listener's actual taste.
+    </p>
+    <p>
+      Our moat is the network effect of community-published stories tied to a personal Taste Profile that
+      sharpens with every session.
+    </p>
+    <div class="market-quote">
+      Everything you've loved in every book you've read — combined into one story, made for you.
+    </div>
+  </div>
+
+  <div class="market-right">
+    <div class="competitor-row header">
+      <div>Platform</div>
+      <div style="text-align: center;">Personal</div>
+      <div style="text-align: center;">Generate</div>
+      <div style="text-align: center;">Audio</div>
+      <div style="text-align: center;">Publish</div>
+    </div>
+    <div class="competitor-row us">
+      <div>Inkwyrm</div>
+      <div class="check-cell yes">●</div>
+      <div class="check-cell yes">●</div>
+      <div class="check-cell yes">●</div>
+      <div class="check-cell yes">●</div>
+    </div>
+    <div class="competitor-row">
+      <div>Audible</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell yes">●</div>
+      <div class="check-cell no">○</div>
+    </div>
+    <div class="competitor-row">
+      <div>StoryGraph</div>
+      <div class="check-cell yes">●</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell no">○</div>
+    </div>
+    <div class="competitor-row">
+      <div>Sudowrite</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell yes">●</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell no">○</div>
+    </div>
+    <div class="competitor-row">
+      <div>Wattpad</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell yes">●</div>
+    </div>
+    <div class="competitor-row">
+      <div>Talefy</div>
+      <div class="check-cell yes">●</div>
+      <div class="check-cell yes">●</div>
+      <div class="check-cell no">○</div>
+      <div class="check-cell no">○</div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================================================================
+     SLIDE 10 — ASK :: ILLUMINATED CLOSING PAGE
+     ================================================================== -->
+<section class="ask">
+  <div class="slide-num"><span>X</span> · The Ask</div>
+
+  <div class="ask-content">
+    <div class="section-eyebrow light">The Ask</div>
+    <div class="big">
+      Two seats open<br>
+      at the <em>writers' table.</em>
+    </div>
+
+    <div class="roles">
+      <div class="role">
+        <div class="role-num">SEAT I</div>
+        <h3><em>Backend</em></h3>
+        <p>
+          Own the infrastructure: API gateway, generation queue, storage, and the audio pipeline that
+          stitches text → voice → sound design.
+        </p>
+        <div class="role-skills">
+          <span class="role-skill">Node / Python</span>
+          <span class="role-skill">Cloud</span>
+          <span class="role-skill">LLM APIs</span>
+          <span class="role-skill">Audio</span>
+        </div>
+      </div>
+
+      <div class="role">
+        <div class="role-num">SEAT II</div>
+        <h3><em>Design</em></h3>
+        <p>
+          Lead the product feel: onboarding flow, Taste Profile UX, generation interface, and the
+          shelf where community stories live.
+        </p>
+        <div class="role-skills">
+          <span class="role-skill">Figma</span>
+          <span class="role-skill">Mobile UX</span>
+          <span class="role-skill">Brand</span>
+          <span class="role-skill">Motion</span>
+        </div>
+      </div>
+
+      <div class="role">
+        <div class="role-num">FOUNDER</div>
+        <h3>Me</h3>
+        <p>
+          Vision, product strategy, prompt and taste-modeling logic, partnerships, and the Inkwyrm
+          editorial direction. Builds with you side-by-side.
+        </p>
+        <div class="role-skills">
+          <span class="role-skill">Product</span>
+          <span class="role-skill">AI</span>
+          <span class="role-skill">Storytelling</span>
+          <span class="role-skill">Hustle</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ask-footer">
+    <div class="ask-footer-left">
+      Anyone with a great story in their head can become a <em>published author</em> — and we built the press.
+    </div>
+    <a href="#" class="ask-cta">Let's build it →</a>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ARK // WASTELAND PROTOCOL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Inline&family=Special+Elite&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rust: #b8451e;
+    --rust-deep: #7a2e14;
+    --bone: #d9c8a3;
+    --sand: #c4a878;
+    --char: #1a0f08;
+    --black: #0a0604;
+    --blood: #5c1810;
+    --ember: #e8893d;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--char);
+    color: var(--bone);
+    font-family: 'Special Elite', monospace;
+    overflow-x: hidden;
+    line-height: 1.5;
+    background-image:
+      radial-gradient(ellipse at 50% 0%, rgba(232, 137, 61, 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 20% 100%, rgba(184, 69, 30, 0.1) 0%, transparent 60%),
+      linear-gradient(180deg, #1a0f08 0%, #0a0604 100%);
+    background-attachment: fixed;
+    color-scheme: dark;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.85 0 0 0 0 0.78 0 0 0 0 0.64 0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 100;
+    mix-blend-mode: overlay;
+    opacity: 0.7;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent 0, transparent 2px,
+      rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 3px);
+    pointer-events: none;
+    z-index: 99;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  header {
+    padding: 24px 40px;
+    border-bottom: 2px solid var(--rust);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: rgba(10, 6, 4, 0.6);
+    backdrop-filter: blur(6px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header-mark { display: flex; align-items: center; gap: 12px; color: var(--ember); }
+  .header-dot {
+    width: 10px; height: 10px;
+    background: var(--rust);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--ember);
+    animation: flicker 3s infinite;
+  }
+  @keyframes flicker {
+    0%, 92%, 100% { opacity: 1; }
+    93% { opacity: 0.3; }
+    94% { opacity: 1; }
+    96% { opacity: 0.5; }
+    97% { opacity: 1; }
+  }
+  .header-meta { color: var(--sand); opacity: 0.7; display: flex; gap: 24px; }
+
+  .hero { padding: 60px 0 100px; position: relative; }
+
+  .hazard {
+    height: 24px;
+    background: repeating-linear-gradient(135deg,
+      var(--rust) 0, var(--rust) 20px,
+      var(--char) 20px, var(--char) 40px);
+    margin-bottom: 60px;
+    opacity: 0.85;
+    border-top: 2px solid var(--ember);
+    border-bottom: 2px solid var(--ember);
+  }
+
+  .hero-stamp {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border: 2px solid var(--rust);
+    color: var(--ember);
+    margin-bottom: 40px;
+    transform: rotate(-1deg);
+    background: rgba(184, 69, 30, 0.1);
+  }
+
+  .hero h1 {
+    font-family: 'Bungee', sans-serif;
+    font-size: clamp(80px, 16vw, 220px);
+    line-height: 0.85;
+    letter-spacing: -0.02em;
+    color: var(--bone);
+    margin-bottom: 24px;
+    text-shadow: 4px 4px 0 var(--blood), 8px 8px 20px rgba(184, 69, 30, 0.4);
+    position: relative;
+  }
+  .hero h1 .accent {
+    color: var(--rust);
+    -webkit-text-stroke: 2px var(--ember);
+    text-shadow: 4px 4px 0 var(--char), 0 0 30px var(--ember);
+  }
+  .hero h1 .crack { display: inline-block; transform: skewX(-3deg); }
+
+  .hero-tagline {
+    font-family: 'Bungee Inline', sans-serif;
+    font-size: 28px;
+    color: var(--ember);
+    letter-spacing: 0.05em;
+    margin-bottom: 32px;
+    text-transform: uppercase;
+  }
+
+  .hero-sub {
+    font-family: 'Special Elite', monospace;
+    font-size: 22px;
+    max-width: 700px;
+    line-height: 1.5;
+    margin-bottom: 60px;
+    color: var(--sand);
+  }
+  .hero-sub strong {
+    color: var(--ember);
+    font-weight: normal;
+    background: var(--blood);
+    padding: 0 8px;
+  }
+
+  .hero-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 2px solid var(--rust);
+    background: rgba(0,0,0,0.4);
+  }
+  .hero-stat {
+    padding: 28px 20px;
+    border-right: 2px solid var(--rust);
+    text-align: center;
+  }
+  .hero-stat:last-child { border-right: none; }
+  .hero-stat-num {
+    font-family: 'Bungee', sans-serif;
+    font-size: 44px;
+    color: var(--ember);
+    line-height: 1;
+    margin-bottom: 10px;
+    text-shadow: 3px 3px 0 var(--blood);
+  }
+  .hero-stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sand);
+  }
+
+  .section {
+    padding: 100px 0;
+    border-top: 1px dashed var(--rust);
+    position: relative;
+  }
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-num::before { content: '◢'; color: var(--ember); font-size: 14px; }
+  .section-title {
+    font-family: 'Bungee', sans-serif;
+    font-size: clamp(48px, 7vw, 96px);
+    line-height: 0.95;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    color: var(--bone);
+    text-shadow: 3px 3px 0 var(--blood);
+  }
+  .section-title em {
+    font-style: normal;
+    color: var(--rust);
+    -webkit-text-stroke: 1px var(--ember);
+  }
+  .section-lede {
+    font-size: 20px;
+    max-width: 700px;
+    line-height: 1.6;
+    margin-bottom: 60px;
+    color: var(--sand);
+  }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+  .split-block {
+    border: 2px solid var(--rust);
+    padding: 32px;
+    background: rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .split-block::before {
+    content: '';
+    position: absolute;
+    top: -2px; left: -2px;
+    width: 40px; height: 40px;
+    border-top: 4px solid var(--ember);
+    border-left: 4px solid var(--ember);
+  }
+  .split-block::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; right: -2px;
+    width: 40px; height: 40px;
+    border-bottom: 4px solid var(--ember);
+    border-right: 4px solid var(--ember);
+  }
+  .split-label {
+    font-family: 'Bungee', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px dashed var(--rust);
+    color: var(--ember);
+  }
+  .split-text {
+    font-size: 17px;
+    line-height: 1.7;
+    margin-bottom: 18px;
+    color: var(--bone);
+  }
+  .split-text strong {
+    font-weight: normal;
+    color: var(--ember);
+    background: var(--blood);
+    padding: 0 6px;
+  }
+
+  .layers {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid var(--rust);
+    background: rgba(0,0,0,0.4);
+  }
+  .layer {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 30px;
+    padding: 28px 32px;
+    border-bottom: 1px dashed var(--rust);
+    align-items: center;
+    transition: background 0.3s ease;
+  }
+  .layer:last-child { border-bottom: none; }
+  .layer:hover { background: rgba(184, 69, 30, 0.15); }
+  .layer:hover .layer-num { color: var(--ember); text-shadow: 3px 3px 0 var(--blood); }
+  .layer-num {
+    font-family: 'Bungee', sans-serif;
+    font-size: 56px;
+    line-height: 1;
+    color: var(--rust);
+    transition: all 0.3s ease;
+  }
+  .layer-content h3 {
+    font-family: 'Bungee', sans-serif;
+    font-size: 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+    color: var(--bone);
+  }
+  .layer-content p {
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--sand);
+  }
+
+  .scenario {
+    background: var(--black);
+    padding: 60px;
+    margin: 50px 0;
+    position: relative;
+    border: 2px solid var(--ember);
+    box-shadow: inset 0 0 60px rgba(184, 69, 30, 0.15), 0 0 40px rgba(184, 69, 30, 0.2);
+  }
+  .scenario::before {
+    content: 'TRANSMISSION // INCOMING';
+    position: absolute;
+    top: -14px;
+    left: 30px;
+    background: var(--char);
+    padding: 4px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--ember);
+    border: 1px solid var(--ember);
+  }
+  .scenario-prompt {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .scenario-prompt::before { content: '►'; color: var(--ember); }
+  .scenario-text {
+    font-family: 'Special Elite', monospace;
+    font-size: 22px;
+    line-height: 1.5;
+    color: var(--bone);
+    margin-bottom: 36px;
+    padding-left: 24px;
+    border-left: 3px solid var(--rust);
+  }
+  .scenario-divider {
+    height: 1px;
+    background: repeating-linear-gradient(90deg,
+      var(--rust) 0, var(--rust) 8px,
+      transparent 8px, transparent 16px);
+    margin: 32px 0;
+  }
+  .scenario-response-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .scenario-response-label::before { content: '◆'; color: var(--ember); animation: flicker 2s infinite; }
+  .scenario-response p {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 14px;
+    color: var(--sand);
+    padding-left: 24px;
+    border-left: 3px solid var(--ember);
+  }
+
+  .arch-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .arch-card {
+    border: 2px solid var(--rust);
+    padding: 32px;
+    background: rgba(0,0,0,0.5);
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  .arch-card:hover {
+    border-color: var(--ember);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--rust);
+  }
+  .arch-icon {
+    font-family: 'Bungee', sans-serif;
+    font-size: 36px;
+    color: var(--ember);
+    margin-bottom: 16px;
+    text-shadow: 2px 2px 0 var(--blood);
+  }
+  .arch-title {
+    font-family: 'Bungee', sans-serif;
+    font-size: 20px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    color: var(--bone);
+  }
+  .arch-desc { font-size: 14px; line-height: 1.5; color: var(--sand); }
+
+  .roadmap { position: relative; padding-left: 60px; }
+  .roadmap::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 12px; bottom: 12px;
+    width: 2px;
+    background: repeating-linear-gradient(180deg,
+      var(--rust) 0, var(--rust) 8px,
+      transparent 8px, transparent 14px);
+  }
+  .roadmap-item { margin-bottom: 48px; position: relative; }
+  .roadmap-item::before {
+    content: '';
+    position: absolute;
+    left: -60px; top: 8px;
+    width: 18px; height: 18px;
+    border: 2px solid var(--rust);
+    background: var(--char);
+    transform: rotate(45deg);
+  }
+  .roadmap-item.active::before {
+    background: var(--ember);
+    border-color: var(--ember);
+    box-shadow: 0 0 20px var(--ember);
+  }
+  .roadmap-phase {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 8px;
+  }
+  .roadmap-title {
+    font-family: 'Bungee', sans-serif;
+    font-size: 26px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    color: var(--bone);
+  }
+  .roadmap-desc {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--sand);
+    max-width: 600px;
+  }
+
+  .mission {
+    background: radial-gradient(ellipse at center, rgba(184, 69, 30, 0.2) 0%, transparent 70%), var(--black);
+    padding: 120px 60px;
+    margin: 80px 0 0;
+    text-align: center;
+    position: relative;
+    border-top: 4px solid var(--rust);
+    border-bottom: 4px solid var(--rust);
+    overflow: hidden;
+  }
+  .mission::before, .mission::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 24px;
+    background: repeating-linear-gradient(135deg,
+      var(--rust) 0, var(--rust) 20px,
+      var(--char) 20px, var(--char) 40px);
+  }
+  .mission::before { top: 0; }
+  .mission::after { bottom: 0; }
+  .mission-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--ember);
+    margin-bottom: 40px;
+  }
+  .mission h2 {
+    font-family: 'Bungee', sans-serif;
+    font-size: clamp(42px, 6vw, 72px);
+    line-height: 1.05;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+    max-width: 1000px;
+    margin: 0 auto 40px;
+    color: var(--bone);
+    text-shadow: 4px 4px 0 var(--blood), 0 0 40px rgba(184, 69, 30, 0.5);
+  }
+  .mission h2 em {
+    font-style: normal;
+    color: var(--ember);
+    -webkit-text-stroke: 1px var(--rust);
+  }
+  .mission-sig {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--rust);
+    margin-top: 50px;
+  }
+
+  footer {
+    padding: 40px;
+    border-top: 2px solid var(--rust);
+    background: var(--black);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--sand);
+  }
+  footer .skull { color: var(--rust); font-size: 14px; }
+
+  @media (max-width: 900px) {
+    .container { padding: 0 20px; }
+    header { padding: 16px 20px; flex-direction: column; gap: 8px; align-items: flex-start; }
+    .header-meta { font-size: 9px; gap: 12px; }
+    .hero { padding: 40px 0 60px; }
+    .hero-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-stat:nth-child(2) { border-right: none; }
+    .hero-stat:nth-child(1), .hero-stat:nth-child(2) { border-bottom: 2px solid var(--rust); }
+    .split { grid-template-columns: 1fr; }
+    .layer { grid-template-columns: 60px 1fr; gap: 20px; padding: 20px; }
+    .layer-num { font-size: 36px; }
+    .scenario { padding: 40px 24px; }
+    .arch-grid { grid-template-columns: 1fr; }
+    .mission { padding: 80px 24px; }
+    .roadmap { padding-left: 40px; }
+    .roadmap-item::before { left: -40px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-mark">
+    <span class="header-dot"></span>
+    <span>ARK // WASTELAND.PROTOCOL</span>
+  </div>
+  <div class="header-meta">
+    <span>v.0.1</span>
+    <span>STATUS: STANDBY</span>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hazard"></div>
+  <div class="container">
+    <div class="hero-stamp">// CLASSIFIED — LAST KNOWLEDGE //</div>
+    <h1>THE <span class="accent crack">ARK</span><br>RUNS DARK.</h1>
+    <p class="hero-tagline">// No grid. No god. No service. //</p>
+    <p class="hero-sub">When the world goes down, so does every cloud, every signal, every search bar. <strong>ARK</strong> is the survival intelligence carved onto your phone — or sealed in a USB. Fueled by nothing. Speaks back. Knows the dirt under your boots.</p>
+
+    <div class="hero-grid">
+      <div class="hero-stat">
+        <div class="hero-stat-num">00</div>
+        <div class="hero-stat-label">Signal Required</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">06</div>
+        <div class="hero-stat-label">Knowledge Layers</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">100</div>
+        <div class="hero-stat-label">Plants / Region</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">∞</div>
+        <div class="hero-stat-label">Days After</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-num">01 // THE PREMISE</div>
+    <h2 class="section-title">When the grid <em>dies</em>,<br>so does Google.</h2>
+    <p class="section-lede">// Every survival resource we trust lives behind a wire. The cloud is a single point of failure for the human race. The wasteland already knows.</p>
+
+    <div class="split">
+      <div class="split-block">
+        <div class="split-label">// THE FAILURE</div>
+        <p class="split-text">Doomsday preppers, off-grid families, and the simply paranoid are <strong>building lives around redundancy</strong> — yet our most valuable resource, knowledge, still lives on infrastructure that vanishes the moment the world cracks open.</p>
+        <p class="split-text">Survival books exist. PDFs exist. But they're scattered, generic, and useless to a man who needs an answer in ten minutes — not ten chapters.</p>
+      </div>
+      <div class="split-block">
+        <div class="split-label">// THE WEAPON</div>
+        <p class="split-text">A self-contained survival intelligence — burned into your phone or a USB — holding the <strong>distilled memory of civilization</strong> in a form you can wield under fire.</p>
+        <p class="split-text">Powered by a small, embedded language model trained only on the bundled survival data. Conversational. Region-aware. Offline. Forever.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-num">02 // WHAT'S INSIDE</div>
+    <h2 class="section-title">Six layers.<br><em>One blueprint.</em></h2>
+    <p class="section-lede">// From "I need water today" to "we need to rebuild a tribe in six months." The full arc — survive, stabilize, reignite.</p>
+
+    <div class="layers">
+      <div class="layer">
+        <div class="layer-num">01</div>
+        <div class="layer-content">
+          <h3>Immediate Survival</h3>
+          <p>Day-one essentials. Water sourcing, fire, shelter, edible plants by region. The first 72 hours.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-num">02</div>
+        <div class="layer-content">
+          <h3>Health &amp; Hygiene</h3>
+          <p>First aid, sanitation without plumbing, wound care, common ailments — when there's no doctor.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-num">03</div>
+        <div class="layer-content">
+          <h3>Resource Repurposing</h3>
+          <p>The world doesn't always end with a bang. Salvaging from existing structures, reading what's left.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-num">04</div>
+        <div class="layer-content">
+          <h3>Rebuilding Foundations</h3>
+          <p>Agriculture, food preservation, tool-making, fundamental construction. The path from surviving to stable.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-num">05</div>
+        <div class="layer-content">
+          <h3>Energy &amp; Utilities</h3>
+          <p>Basic wiring, solar fundamentals, water systems, household-scale renewables. Lights back on.</p>
+        </div>
+      </div>
+      <div class="layer">
+        <div class="layer-num">06</div>
+        <div class="layer-content">
+          <h3>Community &amp; Continuity</h3>
+          <p>Organizing people, sharing skills, trade, mental fortitude, passing the knowledge forward.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-num">03 // IN THE DUST</div>
+    <h2 class="section-title">You ask.<br><em>It answers.</em></h2>
+    <p class="section-lede">// An embedded engine reads your situation, your terrain, your surroundings — and returns the most relevant knowledge from its bundled archive.</p>
+
+    <div class="scenario">
+      <div class="scenario-prompt">USER INPUT</div>
+      <p class="scenario-text">"I'm in Austin, Texas. Grid's down. I need food and water. There's an abandoned house nearby with no power. What do I do?"</p>
+
+      <div class="scenario-divider"></div>
+
+      <div class="scenario-response-label">ARK // RESPONSE</div>
+      <div class="scenario-response">
+        <p>Central Texas — your area: prickly pear cactus pads (cooked), dandelion greens, mesquite pods. Avoid water hemlock near streams.</p>
+        <p>Water: collect rain, look for springs in limestone areas, boil 1+ minute. Cattail roots near water = both food and a hydration indicator.</p>
+        <p>That abandoned house: copper wiring is salvageable for trade or repair. Check for a water heater — 40+ gallons of drinkable water inside if the grid just failed. Roof rainwater collection is your fastest setup.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-num">04 // HOW IT RUNS</div>
+    <h2 class="section-title">Small enough to <em>fit</em>.<br>Smart enough to <em>matter</em>.</h2>
+    <p class="section-lede">// A simplified, locally-running model — chained to one knowledge base. No hallucinations. No drift. No internet.</p>
+
+    <div class="arch-grid">
+      <div class="arch-card">
+        <div class="arch-icon">[ AI ]</div>
+        <h3 class="arch-title">Local Engine</h3>
+        <p class="arch-desc">A compact, open-source model fine-tuned only on the bundled survival corpus. Concise answers, optimized for low-resource hardware.</p>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">[ DB ]</div>
+        <h3 class="arch-title">Curated Archive</h3>
+        <p class="arch-desc">Public-domain manuals, original writeups, region-specific data. Aggregated, rewritten, vetted. Educational reference, properly disclaimed.</p>
+      </div>
+      <div class="arch-card">
+        <div class="arch-icon">[ &gt;_ ]</div>
+        <h3 class="arch-title">Two Forms</h3>
+        <p class="arch-desc">A phone app for the day-to-day off-grid moments. A USB build for the full library — when the situation justifies the storage.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-num">05 // THE PATH</div>
+    <h2 class="section-title">Where to <em>begin</em>.</h2>
+    <p class="section-lede">// The trap is trying to map the whole world at launch. The win is shipping one region — deep — then expanding outward.</p>
+
+    <div class="roadmap">
+      <div class="roadmap-item active">
+        <div class="roadmap-phase">PHASE 01 // NOW</div>
+        <h3 class="roadmap-title">Texas, fully built.</h3>
+        <p class="roadmap-desc">One region. All six knowledge layers. ~50–100 plants, regional considerations, common infrastructure. Ship it.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">PHASE 02</div>
+        <h3 class="roadmap-title">The local engine.</h3>
+        <p class="roadmap-desc">Embed a small model. Wire it to the database. Constrain to survival-only responses. Test the conversational flow.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">PHASE 03</div>
+        <h3 class="roadmap-title">Field testing.</h3>
+        <p class="roadmap-desc">Simulate prepper personas. Run scenario tests. Hunt the gaps and dangerous misfires. Iterate.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">PHASE 04</div>
+        <h3 class="roadmap-title">Regional expansion.</h3>
+        <p class="roadmap-desc">Pacific Northwest. Mountain West. Southeast. Build out by demand — known prepper hotspots first.</p>
+      </div>
+      <div class="roadmap-item">
+        <div class="roadmap-phase">PHASE 05</div>
+        <h3 class="roadmap-title">USB build &amp; launch.</h3>
+        <p class="roadmap-desc">The full archive sold as one-time hardware. The phone app stays as the lighter daily companion.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="mission">
+  <div class="mission-tag">// THE MISSION //</div>
+  <h2>Not just a survival manual.<br>A <em>blueprint</em> for getting<br>humanity building again.</h2>
+  <div class="mission-sig">ARK // WASTELAND PROTOCOL // CONCEPT v.0.1</div>
+</section>
+
+<footer>
+  <span><span class="skull">▲</span> ARK — PITCH DOCUMENT</span>
+  <span>END OF TRANSMISSION</span>
+</footer>
+
+</body>
+</html>
