@@ -298,20 +298,21 @@ section { padding-block: clamp(64px, 10vw, 118px); }
 }
 .also-exploring b { color: var(--ink-2); font-weight: 600; }
 
-/* ---------- Origin (Alien Run) ---------- */
-.origin__box {
-  display: grid; grid-template-columns: 1fr auto; gap: 30px; align-items: center;
-  padding: clamp(28px, 4vw, 44px);
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background:
-    radial-gradient(500px 200px at 85% 120%, rgba(74,222,128,.12), transparent),
-    var(--bg-2);
-  margin-top: 36px;
+/* ---------- Origin (Alien Run) — light aside ---------- */
+.origin-snippet { padding-block: clamp(22px, 3.5vw, 38px); }
+.snippet {
+  display: flex; align-items: center; justify-content: space-between; gap: 26px;
+  padding: 20px 26px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r);
+  background: var(--bg-2);
 }
-.origin__box h3 { font-size: clamp(24px, 3.4vw, 32px); }
-.origin__box p { color: var(--ink-2); margin-top: 12px; max-width: 52ch; }
-@media (max-width: 720px) { .origin__box { grid-template-columns: 1fr; } }
+.snippet__text { max-width: 74ch; }
+.snippet__text .kicker { margin-bottom: 10px; }
+.snippet__text p { color: var(--ink-2); font-size: 14.5px; margin-top: 8px; }
+.snippet__text b { color: var(--ink); font-weight: 600; }
+.snippet .btn { flex: none; }
+@media (max-width: 640px) { .snippet { flex-direction: column; align-items: flex-start; } }
 
 /* ---------- Experience timeline ---------- */
 .tl { margin-top: 40px; display: grid; gap: 0; }
