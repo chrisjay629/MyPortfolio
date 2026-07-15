@@ -10,7 +10,7 @@ Hand-built static site — no framework, no build step.
 - `css/site.css` — styles (warm-dark theme, Fraunces / Inter / JetBrains Mono)
 - `js/site.js` — light vanilla-JS interactions (scroll reveal, sticky nav)
 - `decks/` — self-hosted product pitch decks
-- `CHRISTOPHER_L_JAUREGUI2.pdf` — résumé
+- `resume.jpeg` — résumé
 
 ## Local preview
 ```bash
